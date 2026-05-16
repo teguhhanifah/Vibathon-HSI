@@ -16,6 +16,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 </head>
@@ -107,6 +110,89 @@
                 </div>
             </section>
         </div>
+
+        <!-- Simulator Section -->
+        <section class="simulator-section">
+            <div class="card">
+                <div class="card-title">
+                    <i data-lucide="zap"></i>
+                    Dynamic AC Electricity Cost Simulator
+                </div>
+                
+                <div class="simulator-grid">
+                    <div class="simulator-inputs">
+                        <form id="simulatorForm">
+                            <div class="form-group">
+                                <label for="simPk">AC Capacity (PK)</label>
+                                <select id="simPk">
+                                    <option value="0.5">1/2 PK (~350W)</option>
+                                    <option value="1" selected>1 PK (~750W)</option>
+                                    <option value="1.5">1.5 PK (~1150W)</option>
+                                    <option value="2">2 PK (~1500W)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="simTariff">Electricity Tariff (Rp/kWh)</label>
+                                <input type="number" id="simTariff" value="1444" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="simHours">Usage Duration (Hours/Day)</label>
+                                <input type="number" id="simHours" value="8" min="0" max="24">
+                            </div>
+                            <div class="form-group">
+                                <label for="simSavings">Savings Percentage (%)</label>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <input type="range" id="simSavings" min="0" max="50" value="20" style="flex: 1;">
+                                    <span id="savingsValue" style="font-weight: 700; color: var(--accent); min-width: 3rem;">20%</span>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="table-responsive">
+                            <table class="results-table">
+                                <thead>
+                                    <tr>
+                                        <th>Period</th>
+                                        <th>Before (Rp)</th>
+                                        <th>After (Rp)</th>
+                                        <th>Savings (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Daily</td>
+                                        <td id="dailyBefore">-</td>
+                                        <td id="dailyAfter">-</td>
+                                        <td id="dailySavings" class="text-accent">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Monthly</td>
+                                        <td id="monthlyBefore">-</td>
+                                        <td id="monthlyAfter">-</td>
+                                        <td id="monthlySavings" class="text-accent">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Yearly</td>
+                                        <td id="yearlyBefore">-</td>
+                                        <td id="yearlyAfter">-</td>
+                                        <td id="yearlySavings" class="text-accent">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="simulator-charts">
+                        <div class="chart-container">
+                            <canvas id="costComparisonChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="annualSavingsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Toast Notification -->

@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
         '2': 1.5
     };
 
+    // Simulator Wattage Constants
+    const AC_WATTS = {
+        '0.5': 350,
+        '1': 750,
+        '1.5': 1150,
+        '2': 1500
+    };
+
     let orders = JSON.parse(localStorage.getItem('freezeFlow_orders')) || [];
 
     // --- DOM Elements ---
@@ -30,6 +38,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyList = document.getElementById('historyList');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
+
+    // --- Simulator Elements ---
+    const simPk = document.getElementById('simPk');
+    const simTariff = document.getElementById('simTariff');
+    const simHours = document.getElementById('simHours');
+    const simSavings = document.getElementById('simSavings');
+    const savingsValueDisplay = document.getElementById('savingsValue');
+
+    const dailyBefore = document.getElementById('dailyBefore');
+    const dailyAfter = document.getElementById('dailyAfter');
+    const dailySavings = document.getElementById('dailySavings');
+    const monthlyBefore = document.getElementById('monthlyBefore');
+    const monthlyAfter = document.getElementById('monthlyAfter');
+    const monthlySavings = document.getElementById('monthlySavings');
+    const yearlyBefore = document.getElementById('yearlyBefore');
+    const yearlyAfter = document.getElementById('yearlyAfter');
+    const yearlySavings = document.getElementById('yearlySavings');
+
+    let costChart = null;
+    let savingsChart = null;
 
     // --- Core Functions ---
 
@@ -110,6 +138,116 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
+    // --- Simulator Functions ---
+
+    /**
+     * Updates the simulator table and charts
+     */
+    const updateSimulator = () => {
+        const pk = simPk.value;
+        const tariff = parseFloat(simTariff.value) || 0;
+        const hours = parseFloat(simHours.value) || 0;
+        const savingsPct = parseFloat(simSavings.value) || 0;
+
+        // Update savings label
+        savingsValueDisplay.textContent = `${savingsPct}%`;
+
+        // Calculate Consumption (kWh)
+        const watts = AC_WATTS[pk] || 0;
+        const dailyKwh = (watts / 1000) * hours;
+        
+        // Calculations
+        const dBefore = dailyKwh * tariff;
+        const dAfter = dBefore * (1 - (savingsPct / 100));
+        const dSavings = dBefore - dAfter;
+
+        const mBefore = dBefore * 30;
+        const mAfter = dAfter * 30;
+        const mSavings = dSavings * 30;
+
+        const yBefore = dBefore * 365;
+        const yAfter = dAfter * 365;
+        const ySavings = dSavings * 365;
+
+        // Update Table
+        dailyBefore.textContent = formatIDR(dBefore);
+        dailyAfter.textContent = formatIDR(dAfter);
+        dailySavings.textContent = formatIDR(dSavings);
+
+        monthlyBefore.textContent = formatIDR(mBefore);
+        monthlyAfter.textContent = formatIDR(mAfter);
+        monthlySavings.textContent = formatIDR(mSavings);
+
+        yearlyBefore.textContent = formatIDR(yBefore);
+        yearlyAfter.textContent = formatIDR(yAfter);
+        yearlySavings.textContent = formatIDR(ySavings);
+
+        updateCharts(mBefore, mAfter, ySavings);
+    };
+
+    /**
+     * Initializes or updates the charts
+     */
+    const updateCharts = (mBefore, mAfter, ySavings) => {
+        const ctxCost = document.getElementById('costComparisonChart').getContext('2d');
+        const ctxSavings = document.getElementById('annualSavingsChart').getContext('2d');
+
+        // Cost Comparison Chart
+        if (costChart) {
+            costChart.data.datasets[0].data = [mBefore, mAfter];
+            costChart.update();
+        } else {
+            costChart = new Chart(ctxCost, {
+                type: 'bar',
+                data: {
+                    labels: ['Before', 'After'],
+                    datasets: [{
+                        label: 'Monthly Cost (Rp)',
+                        data: [mBefore, mAfter],
+                        backgroundColor: ['#64748b', '#0ea5e9'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Monthly Cost Comparison' }
+                    }
+                }
+            });
+        }
+
+        // Annual Savings Chart
+        if (savingsChart) {
+            savingsChart.data.datasets[0].data = [ySavings];
+            savingsChart.update();
+        } else {
+            savingsChart = new Chart(ctxSavings, {
+                type: 'bar',
+                data: {
+                    labels: ['Annual Savings'],
+                    datasets: [{
+                        label: 'Total Saved (Rp)',
+                        data: [ySavings],
+                        backgroundColor: ['#10b981'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Total Annual Savings' }
+                    }
+                }
+            });
+        }
+    };
+
     /**
      * Saves a new order and redirects to WhatsApp
      */
@@ -171,7 +309,13 @@ Mohon segera dikonfirmasi. Terima kasih!`;
 
     orderForm.addEventListener('submit', handleOrderSubmit);
 
+    // Simulator Listeners
+    [simPk, simTariff, simHours, simSavings].forEach(el => {
+        el.addEventListener('input', updateSimulator);
+    });
+
     // --- Initialization ---
     calculateTotal();
     renderHistory();
+    updateSimulator();
 });
